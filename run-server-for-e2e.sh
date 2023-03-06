@@ -29,7 +29,9 @@ CONF_DIR_TO_COPY_FROM="scripts/"
 DATA_DIR="data/"
 IS_SSL_PROCESSED=0
 #The working directory - the server is copied to this directory and later changes are done to this dir;
-SERVER_DIR="infinispan-server"
+SERVER_DIR_PREFIX="infinispan-server-"
+SERVER_DIRECTORIES=()
+BASE_SERVER_DIR="infinispan-server-1"
 #CLI command for getting the cluster size
 CLUSTER_SIZE_MAIN="$SERVER_HOME/bin/cli.sh -c localhost:11322 -f batch "
 
@@ -62,7 +64,7 @@ function prepareServerDir()
     cd ..
 
     if [[ -z "${SERVER_TMP}" ]]; then
-         SERVER_TMP=server/${SERVER_DIR}
+         SERVER_TMP=${BASE_DIR}/${BASE_SERVER_DIR}
          mkdir ${SERVER_TMP} 2>/dev/null
          echo "Created temporary directory: $SERVER_TMP"
 
@@ -75,7 +77,17 @@ function prepareServerDir()
     cp "${CONF_DIR_TO_COPY_FROM}/${confPath}" ${SERVER_TMP}/${dirName}/conf
     echo "Infinispan configuration file ${confPath} copied to server ${dirName}."
 
-    export SERVER_TMP=${SERVER_TMP}
+    SERVER_DIRECTORIES+=("${SERVER_TMP}")
+}
+
+function prepareXSiteEnvironment() {
+  for i in {2..4}
+  do
+    tmp_dir="${BASE_DIR}/${SERVER_DIR_PREFIX}${i}"
+    mkdir ${tmp_dir}
+    cp -r ${SERVER_DIRECTORIES[0]}/* ${tmp_dir}/
+    SERVER_DIRECTORIES+=("${tmp_dir}")
+  done
 }
 
 #Starts the server;
@@ -83,30 +95,36 @@ function startServer()
 {
     local isCi=$1
     local confPath=$2
-    local port=${3}
-    local nodeName=${4}
-    local jvmParam=${5}
+    local nodeName=${3}
+    local jvmParam=${4}
+    declare -i offset=0;
 
     prepareServerDir "${isCi}" ${confPath} ${nodeName}
 
-    if [[ ! -z ${port} ]]; then
-        portStr="-p ${port}"
-    fi
-
-    $SERVER_TMP/bin/cli.sh user create ${USER_NAME} -p ${PASSWORD} -s ${nodeName}
+    base_server=${SERVER_DIRECTORIES[0]}
+    $base_server/bin/cli.sh user create ${USER_NAME} -p ${PASSWORD} -s ${nodeName}
 
     #Installing nashorn engine before server startup
-    ${SERVER_TMP}/bin/cli.sh install org.openjdk.nashorn:nashorn-core:15.4 --server-root=infinispan-4-e2e
-    ${SERVER_TMP}/bin/cli.sh install org.ow2.asm:asm:9.4  --server-root=infinispan-4-e2e
-    ${SERVER_TMP}/bin/cli.sh install org.ow2.asm:asm-commons:9.4  --server-root=infinispan-4-e2e
-    ${SERVER_TMP}/bin/cli.sh install org.ow2.asm:asm-tree:9.4  --server-root=infinispan-4-e2e
-    ${SERVER_TMP}/bin/cli.sh install org.ow2.asm:asm-util:9.4  --server-root=infinispan-4-e2e
+    ${base_server}/bin/cli.sh install org.openjdk.nashorn:nashorn-core:15.4 --server-root=infinispan-4-e2e
+    ${base_server}/bin/cli.sh install org.ow2.asm:asm:9.4  --server-root=infinispan-4-e2e
+    ${base_server}/bin/cli.sh install org.ow2.asm:asm-commons:9.4  --server-root=infinispan-4-e2e
+    ${base_server}/bin/cli.sh install org.ow2.asm:asm-tree:9.4  --server-root=infinispan-4-e2e
+    ${base_server}/bin/cli.sh install org.ow2.asm:asm-util:9.4  --server-root=infinispan-4-e2e
+    
+    #Copying the adjusted server to other 3 instances for being able to run them in xsite repl state
+    prepareXSiteEnvironment
 
-    if [[ ${isCi} = "--ci" ]]; then
-      nohup $SERVER_TMP/bin/server.sh -Djavax.net.debug -Dorg.infinispan.openssl=false -c ${confPath} -s ${SERVER_TMP}/${nodeName} ${portStr:-""} --node-name=${nodeName} ${jvmParam:-} &
-    else
-      ${SERVER_TMP}/bin/server.sh -Djavax.net.debug -Dorg.infinispan.openssl=false -c ${confPath} -s ${SERVER_TMP}/${nodeName} ${portStr:-} --node-name=${nodeName} ${jvmParam:-} &
-    fi
+    for i in "${SERVER_DIRECTORIES[@]}"
+    do
+      if [[ ${isCi} = "--ci" ]]; then
+        nohup $i/bin/server.sh -Djavax.net.debug -Dorg.infinispan.openssl=false -c ${confPath} -s ${i}/${nodeName} -o ${offset} --node-name=${nodeName} ${jvmParam:-} &
+      else
+        ${i}/bin/server.sh -Djavax.net.debug -Dorg.infinispan.openssl=false -c ${confPath} -s ${i}/${nodeName} -o ${offset} --node-name=${nodeName} ${jvmParam:-} &
+      fi
+      offset+=100;
+    done
+
+    
 
     #Creating data in the server
     sleep 10
@@ -115,12 +133,12 @@ function startServer()
 }
 
 #deleting the testable server directory
-rm -drf server/${SERVER_DIR}
+rm -drf server/${BASE_SERVER_DIR}
 rm -drf server/${SERVER_UNZIP_DIR}
 
 export JAVA_OPTS="-Xms512m -Xmx1024m -XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=512m"
 
-startServer "$1" infinispan-basic-auth.xml 11222 infinispan-4-e2e
+startServer "$1" infinispan-basic-auth.xml infinispan-4-e2e
 echo "Infinispan Server for E2E tests has started."
 
 
