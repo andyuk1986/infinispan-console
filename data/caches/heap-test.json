@@ -1,0 +1,17 @@
+{
+    "distributed-cache": {
+    "mode": "SYNC",
+    "statistics": true,
+    "encoding": {
+        "media-type": "application/x-protostream"
+    },
+    "transaction": {
+        "mode": "NON_XA"
+    },
+    "memory": {
+        "storage": "HEAP",
+        "max-size": "1.5GB"
+    }
+    }
+}
+  

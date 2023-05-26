@@ -15,6 +15,9 @@ curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/octet-
 curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/java-serialized-cache
 curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/invalidation-cache
 curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/scattered-cache
+curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/heap-test
+curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/off-heap-test
+curl -XDELETE --digest -u $userPass http://localhost:11222/rest/v2/caches/people
 
 echo "= Create schema"
 
@@ -41,6 +44,10 @@ curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@cache
 curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@caches/javaSerializedCache.json" "http://localhost:11222/rest/v2/caches/java-serialized-cache"
 # curl -XPOST  -u $userPass -H "Content-Type: application/json" -d "@caches/invalidationCache.json" "http://localhost:11222/rest/v2/caches/invalidation-cache"
 curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@caches/scatteredCache.json" "http://localhost:11222/rest/v2/caches/scattered-cache"
+curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@caches/heap-test.json" http://localhost:11222/rest/v2/caches/heap-test
+curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@caches/off-heap-test.json" http://localhost:11222/rest/v2/caches/off-heap-test
+curl -XPOST --digest -u $userPass -H "Content-Type: application/json" -d "@caches/people.json" http://localhost:11222/rest/v2/caches/people
+
 
 
 for i in {1..10}

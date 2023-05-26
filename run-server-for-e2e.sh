@@ -46,8 +46,7 @@ DEPLOYER_USER_NAME="deployer"
 function prepareServerDir()
 {
     local isCi=$1
-    local confPath=$2
-    local dirName=${3}
+    local dirName=${2}
 
 cd ${BASE_DIR}
     if [ -n "${EXISTING_SERVER_PATH}" ]; then
@@ -77,9 +76,6 @@ cd ${BASE_DIR}
 
     cp -r ${SERVER_HOME}/*/server ${SERVER_TMP}/${dirName}
 
-    cp "${CONF_DIR_TO_COPY_FROM}/${confPath}" ${SERVER_TMP}/${dirName}/conf
-    echo "Infinispan configuration file ${confPath} copied to server ${dirName}."
-
     export SERVER_TMP=${SERVER_TMP}
 }
 
@@ -87,12 +83,13 @@ cd ${BASE_DIR}
 function startServer()
 {
     local isCi=$1
-    local confPath=$2
-    local port=${3}
-    local nodeName=${4}
-    local jvmParam=${5}
+    local port=${2}
+    local nodeName=${3}
+    local jvmParam=${4}
 
-    prepareServerDir "${isCi}" ${confPath} ${nodeName}
+    local confPath="infinispan-dev-mode.xml"
+
+    prepareServerDir "${isCi}" ${nodeName}
 
     if [[ ! -z ${port} ]]; then
         portStr="-p ${port}"
@@ -129,7 +126,7 @@ rm -drf server/${SERVER_UNZIP_DIR}
 
 export JAVA_OPTS="-Xms512m -Xmx1024m -XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=512m"
 
-startServer "$1" infinispan-basic-auth.xml 11222 infinispan-4-e2e
+startServer "$1" 11222 infinispan-4-e2e
 echo "Infinispan Server for E2E tests has started."
 
 

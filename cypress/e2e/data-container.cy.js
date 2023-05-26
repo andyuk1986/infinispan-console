@@ -1,5 +1,5 @@
 describe('Data Container Overview', () => {
-  const numberOfCaches = 20;
+  const numberOfCaches = 22;
 
   beforeEach(() => {
     cy.login(Cypress.env('username'), Cypress.env('password'));
@@ -41,16 +41,18 @@ describe('Data Container Overview', () => {
     cy.contains('invalidationCache');
     cy.get('[data-action=previous]').should('be.disabled');
     cy.get('[data-action=next]').click();
+    cy.get('[data-cy=cachesTable] tr').should('have.length', 11); //11 including header row
+    cy.get('[data-action=next]').click();
 
     //Verify that the other caches are visible
-    var numOfCachesOnNextPage = numberOfCaches - 10;
-    cy.get('[data-cy=cachesTable] tr').should('have.length', numOfCachesOnNextPage + 1); //including header row
-    cy.contains('people');
+    var numOfCachesOnNextPage = numberOfCaches - 20;
+    cy.get('[data-cy=cachesTable] tr').should('have.length', numOfCachesOnNextPage + 1); // 3 including header row
     cy.contains('xml-cache');
 
     cy.get('[data-action=next]').should('be.disabled');
 
     //Going back to the first page
+    cy.get('[data-action=previous]').click();
     cy.get('[data-action=previous]').click();
     cy.get('[data-action=previous]').should('be.disabled');
     cy.get('[data-cy=cachesTable] tr').should('have.length', 11); //11 including header row
@@ -64,29 +66,15 @@ describe('Data Container Overview', () => {
     cy.get('[data-action=per-page-20] > div').should('not.exist');
     cy.get('[data-action=per-page-50] > div').should('not.exist');
     cy.get('[data-action=per-page-100] > div').should('not.exist');
-    cy.get('[data-action=per-page-20]').click();
+    cy.get('[data-action=per-page-50]').click();
 
     //Verifying that all caches are shown and navigation buttons are disabled
-    cy.get('[id^="pagination-caches-top-pagination"]').click();
-    cy.get('[data-action=per-page-10] > div').should('not.exist'); //Verifying the selected option
-    cy.get('[data-action=per-page-20] > div').should('exist');
-    cy.get('[data-action=per-page-50] > div').should('not.exist');
-    cy.get('[data-action=per-page-100] > div').should('not.exist');
-    cy.get('[data-cy=cachesTable] tr').should('have.length', numberOfCaches + 1); // including header row
-    cy.get('[data-action=next]').should('be.disabled');
-    cy.get('[data-action=previous]').should('be.disabled');
-    cy.contains('java-serialized-cache');
-    cy.contains('people');
-    cy.contains('xml-cache');
-
-    //Changing the number of items on the page to 3rd option
-    cy.get('[data-action=per-page-50]').click();
     cy.get('[id^="pagination-caches-top-pagination"]').click();
     cy.get('[data-action=per-page-10] > div').should('not.exist'); //Verifying the selected option
     cy.get('[data-action=per-page-20] > div').should('not.exist');
     cy.get('[data-action=per-page-50] > div').should('exist');
     cy.get('[data-action=per-page-100] > div').should('not.exist');
-    cy.get('[data-cy=cachesTable] tr').should('have.length', numberOfCaches + 1); //including header row
+    cy.get('[data-cy=cachesTable] tr').should('have.length', numberOfCaches + 1); // including header row
     cy.get('[data-action=next]').should('be.disabled');
     cy.get('[data-action=previous]').should('be.disabled');
     cy.contains('java-serialized-cache');
@@ -142,7 +130,7 @@ describe('Data Container Overview', () => {
 
     //Verifying that only replicated caches are shown
     cy.contains('jboss-cache');
-    cy.get('[data-cy=cachesTable] tr').should('have.length', 2); //2 including header row
+    cy.get('[data-cy=cachesTable] tr').should('have.length', 4); //4 including header row
     //Verifying that all entries are replicated caches
     cy.get('[data-cy^=type-]').each((badge) => {
       cy.wrap(badge).contains('Replicated');
@@ -159,7 +147,7 @@ describe('Data Container Overview', () => {
     cy.contains('jboss-cache');
     cy.contains('invalidationCache');
     cy.contains('scattered-cache');
-    cy.get('[data-cy=cachesTable] tr').should('have.length', 4); //4 including header row
+    cy.get('[data-cy=cachesTable] tr').should('have.length', 6); //6 including header row
 
     //Clears all filters
     cy.get('[data-cy=clearAllButton]').click();
@@ -188,7 +176,7 @@ describe('Data Container Overview', () => {
 
     //Changing the number of caches on the page to view them all
     cy.get('[id^="pagination-caches-top-pagination"]').click();
-    cy.get('[data-action=per-page-20]').click();
+    cy.get('[data-action=per-page-50]').click();
     cy.contains('not-encoded');
     cy.contains('xml-cache');
     cy.contains('text-cache');

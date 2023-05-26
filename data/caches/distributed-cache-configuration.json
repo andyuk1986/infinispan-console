@@ -1,0 +1,7 @@
+{
+    "distributed-cache-configuration": {
+        "encoding": {
+            "media-type": "application/x-protostream"
+        }
+    }
+}
